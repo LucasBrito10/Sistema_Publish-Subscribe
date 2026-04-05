@@ -1,6 +1,8 @@
 # Middleware IoT — Publish/Subscribe
 
-Sistema de middleware para Internet das Coisas (IoT) baseado no padrão arquitetural **Publish/Subscribe**, implementado em Java com comunicação via **Sockets TCP** e serialização de dados em **JSON**. O sistema é composto por quatro módulos independentes, cada um com seu próprio `pom.xml` e `Dockerfile`.
+Sistema de middleware para Internet das Coisas (IoT) baseado no padrão arquitetural **Publish/Subscribe**, implementado em Java com comunicação via **Sockets TCP** e serialização de dados em **JSON**. O sistema é projetado para execução distribuída, com cada módulo rodando em uma máquina diferente na rede. O endereço IP do Broker deve ser informado explicitamente em cada nó na inicialização.
+
+> O valor `localhost` presente no código-fonte serve exclusivamente para testes locais. Em ambiente de rede real, substitua pelo IP da máquina onde o Broker estiver em execução.
 
 ---
 
@@ -30,6 +32,16 @@ O sistema é organizado em quatro módulos com responsabilidades bem definidas:
 | `atuador` | `ActuatorCooler` / `ActuatorExhaust` | Publisher + Subscriber | Assina um tópico, reage a comandos diretos e envia ACKs de confirmação ao remetente |
 | `cliente` | `ClientTerminalUI` | Publisher + Subscriber | Interface interativa via terminal para monitorar tópicos, enviar mensagens ou comandos e aguardar respostas |
 
+### Topologia de Rede
+
+Cada módulo é executado em uma máquina separada. Todos os nós (sensores, atuadores e clientes) conectam-se ao Broker pelo seu endereço IP e porta. O Broker é o único elemento que precisa ter seu IP conhecido e acessível pelos demais.
+
+```
+[ Máquina A ]          [ Máquina B ]         [ Máquina C ]         [ Máquina D ]
+  Broker                 Sensor                 Atuador               Cliente
+  porta 8080   <----     IP_BROKER:8080  ---->  IP_BROKER:8080  <---> IP_BROKER:8080
+```
+
 ### Fluxo de Roteamento
 
 O `Broker` suporta dois modos de roteamento:
@@ -51,6 +63,8 @@ Ao receber um comando (`TURN_ON`, `TURN_OFF`, `STATUS_REQUEST`), o Atuador respo
 O cliente pode aguardar essa resposta com o método `waitForResponse(expectedNodeId, timeoutMillis)`, que bloqueia a thread até que o ACK do nó esperado chegue ou o tempo limite seja atingido.
 
 ### Sensores e Atuadores Pré-configurados
+
+Os valores de host no código-fonte estão definidos como `localhost` para fins de teste. Antes de executar em rede, edite as classes abaixo substituindo `"localhost"` pelo IP real do Broker.
 
 | Classe | ID | Tópico | Comportamento |
 |--------|----|--------|---------------|
@@ -188,44 +202,91 @@ Toda comunicação é serializada em JSON. O campo `topic` utiliza o enum `Topic
 
 > **Ordem de inicialização obrigatória:** O Broker deve estar em execução antes de qualquer Sensor, Atuador ou Cliente ser iniciado. Atuadores devem ser iniciados antes dos Sensores quando se deseja que os ACKs automáticos funcionem desde o início.
 
+> **IP do Broker:** Em todos os comandos abaixo, `<IP_BROKER>` representa o endereço IP da máquina onde o Broker está rodando. Certifique-se de que a porta `8080` está acessível na rede (sem bloqueios de firewall).
+
+Para descobrir o IP da máquina do Broker:
+
+```bash
+# Linux / macOS
+ip a
+# ou
+hostname -I
+
+# Windows
+ipconfig
+```
+
+---
+
+### Substituindo o IP nos módulos de Sensor e Atuador
+
+Os arquivos `SensorTemperature.java`, `SensorHumidity.java`, `ActuatorCooler.java` e `ActuatorExhaust.java` contêm `"localhost"` como endereço do Broker. Antes de compilar e executar em rede, edite cada arquivo substituindo esse valor pelo IP real:
+
+```java
+// Antes (teste local)
+sensor.initializeSensor("sensor-temp-1", "localhost", 8080, TopicType.TEMP, 2000);
+
+// Depois (rede real)
+sensor.initializeSensor("sensor-temp-1", "192.168.1.10", 8080, TopicType.TEMP, 2000);
+```
+
+O mesmo padrão se aplica às classes de Atuador:
+
+```java
+// Antes
+cooler.initializeActuator("ACTUATOR-COOLER", "localhost", 8080, TopicType.TEMP);
+
+// Depois
+cooler.initializeActuator("ACTUATOR-COOLER", "192.168.1.10", 8080, TopicType.TEMP);
+```
+
+O `ClientTerminalUI` solicita o IP interativamente na inicialização, portanto não requer alteração no código.
+
 ---
 
 ### Opção 1: Maven
 
-Execute os comandos abaixo a partir do diretório raiz de cada módulo.
-
-**Compilação:**
+**Compilação (em cada módulo):**
 
 ```bash
 mvn clean compile
 ```
 
-**Execução:**
+**Execução — Máquina do Broker:**
 
 ```bash
-# 1. Broker
 cd broker
 java -cp target/classes implementation.ServerMain
+```
 
-# 2. Atuador Cooler (Subscriber + Publisher — topico TEMP)
+**Execução — Máquina do Atuador:**
+
+```bash
+# Cooler (tópico TEMP)
 cd atuador
 java -cp target/classes implementation.ActuatorCooler
 
-# 3. Atuador Exhaust (Subscriber + Publisher — topico UMI)
-cd atuador
+# Exhaust (tópico UMI) — pode ser a mesma máquina ou outra
 java -cp target/classes implementation.ActuatorExhaust
+```
 
-# 4. Sensor de Temperatura (Publisher — topico TEMP)
+**Execução — Máquina do Sensor:**
+
+```bash
+# Sensor de Temperatura
 cd sensor
 java -cp target/classes implementation.SensorTemperature
 
-# 5. Sensor de Umidade (Publisher — topico UMI)
-cd sensor
+# Sensor de Umidade
 java -cp target/classes implementation.SensorHumidity
+```
 
-# 6. Cliente Terminal (interface interativa)
+**Execução — Máquina do Cliente:**
+
+```bash
 cd cliente
 java -cp target/classes implementation.ClientTerminalUI
+# Informe o IP do Broker quando solicitado
 ```
 
 ---
@@ -239,77 +300,98 @@ mkdir -p out
 javac -d out $(find src/main/java -name "*.java")
 ```
 
-**Execução:**
+**Execução — Máquina do Broker:**
 
 ```bash
-# 1. Broker
 cd broker && java -cp out implementation.ServerMain
+```
 
-# 2. Atuadores
+**Execução — Máquina do Atuador:**
+
+```bash
 cd atuador && java -cp out implementation.ActuatorCooler
 cd atuador && java -cp out implementation.ActuatorExhaust
+```
 
-# 3. Sensores
+**Execução — Máquina do Sensor:**
+
+```bash
 cd sensor && java -cp out implementation.SensorTemperature
 cd sensor && java -cp out implementation.SensorHumidity
+```
 
-# 4. Cliente Terminal
+**Execução — Máquina do Cliente:**
+
+```bash
 cd cliente && java -cp out implementation.ClientTerminalUI
+# Informe o IP do Broker quando solicitado
 ```
 
 ---
 
 ### Opção 3: Docker
 
-Cada módulo possui seu próprio `Dockerfile`. Todos os contêineres devem compartilhar a mesma rede virtual para que a comunicação via Socket funcione.
+Cada módulo possui seu próprio `Dockerfile`. Em ambiente de rede real, os contêineres rodam em hosts diferentes. Neste caso, não é necessária a rede virtual do Docker — a comunicação ocorre pela rede física entre as máquinas.
 
-**Construção das imagens:**
-
-```bash
-docker build -t iot-broker   ./broker
-docker build -t iot-sensor   ./sensor
-docker build -t iot-atuador  ./atuador
-docker build -t iot-cliente  ./cliente
-```
-
-**Criação da rede virtual:**
+**Construção das imagens (em cada máquina):**
 
 ```bash
-docker network create rede-iot
+# Na máquina do Broker
+docker build -t iot-broker ./broker
+
+# Na máquina do Sensor
+docker build -t iot-sensor ./sensor
+
+# Na máquina do Atuador
+docker build -t iot-atuador ./atuador
+
+# Na máquina do Cliente
+docker build -t iot-cliente ./cliente
 ```
 
-**Execução:**
+**Execução — Máquina do Broker:**
 
 ```bash
-# 1. Broker (segundo plano)
-docker run -d --name broker --network rede-iot iot-broker
-
-# 2. Atuadores (segundo plano)
-docker run -d --name cooler  --network rede-iot iot-atuador java implementation.ActuatorCooler
-docker run -d --name exhaust --network rede-iot iot-atuador java implementation.ActuatorExhaust
-
-# 3. Sensores (segundo plano)
-docker run -d --name sensor-temp --network rede-iot iot-sensor java implementation.SensorTemperature
-docker run -d --name sensor-hum  --network rede-iot iot-sensor java implementation.SensorHumidity
-
-# 4. Cliente Terminal (modo interativo)
-docker run -it --name cliente --network rede-iot iot-cliente java implementation.ClientTerminalUI
+docker run -d --name broker -p 8080:8080 iot-broker
 ```
 
-> Ao usar Docker, informe `broker` como **host** no cliente terminal (nome do contêiner na rede), no lugar de `localhost`.
+**Execução — Máquina do Atuador:**
+
+```bash
+docker run -d --name cooler  iot-atuador java implementation.ActuatorCooler
+docker run -d --name exhaust iot-atuador java implementation.ActuatorExhaust
+```
+
+**Execução — Máquina do Sensor:**
+
+```bash
+docker run -d --name sensor-temp iot-sensor java implementation.SensorTemperature
+docker run -d --name sensor-hum  iot-sensor java implementation.SensorHumidity
+```
+
+**Execução — Máquina do Cliente:**
+
+```bash
+docker run -it --name cliente iot-cliente java implementation.ClientTerminalUI
+# Informe o IP do Broker quando solicitado
+```
+
+> Para testes em ambiente local com múltiplos contêineres em uma única máquina, crie uma rede virtual e use o nome do contêiner como host: `docker network create rede-iot` e adicione `--network rede-iot` em todos os `docker run`, informando `broker` como host no cliente.
 
 ---
 
 ## Manual do Cliente Terminal
 
-O `ClientTerminalUI` é uma interface de linha de comando que permite interagir com o sistema Pub/Sub em tempo real. Ao iniciar, são solicitadas três informações de configuração:
+O `ClientTerminalUI` é a única interface que solicita o IP do Broker interativamente, sem necessidade de alterar o código-fonte. Ao iniciar, são solicitadas três informações:
 
 ```
 === Gateway IoT ===
-Host: localhost
+Host: 192.168.1.10
 Porta: 8080
 ID do dispositivo: operador-1
 ```
+
+Informe o IP real da máquina onde o Broker está rodando no campo **Host**.
 
 Após a configuração, o menu principal é exibido a cada interação.
 
@@ -427,11 +509,9 @@ Encerra o processo do cliente.
 
 ### Exemplo de sessão completa
 
-O exemplo abaixo demonstra um cliente que monitora o tópico `TEMP`, consulta o histórico e envia um comando de desligamento ao cooler, aguardando a confirmação:
-
 ```
 === Gateway IoT ===
-Host: localhost
+Host: 192.168.1.10
 Porta: 8080
 ID do dispositivo: operador-1
 
