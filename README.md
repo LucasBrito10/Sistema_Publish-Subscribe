@@ -1,6 +1,6 @@
-# Middleware IoT — Publish/Subscribe
+# Sistema — Publish/Subscribe
 
-Sistema de middleware para Internet das Coisas (IoT) baseado no padrão arquitetural **Publish/Subscribe**, implementado em Java com comunicação via **Sockets TCP** e serialização de dados em **JSON**. O sistema é projetado para execução distribuída, com cada módulo rodando em uma máquina diferente na rede. O endereço IP do Broker deve ser informado explicitamente em cada nó na inicialização.
+Sistema de middleware baseado no padrão arquitetural **Publish/Subscribe**, implementado em Java com comunicação via **Sockets TCP** e serialização de dados em **JSON**. O sistema é projetado para execução distribuída, com cada módulo rodando em uma máquina diferente na rede. O endereço IP do Broker deve ser informado explicitamente em cada nó na inicialização.
 
 > O valor `localhost` presente no código-fonte serve exclusivamente para testes locais. Em ambiente de rede real, substitua pelo IP da máquina onde o Broker estiver em execução.
 
@@ -80,7 +80,7 @@ Os valores de host no código-fonte estão definidos como `localhost` para fins 
 Cada módulo replica a mesma divisão interna em três pacotes, separando implementação, modelos e enumerações:
 
 ```
-middleware-iot/
+FinalSistem/
 │
 ├── broker/
 │   ├── src/main/java/
