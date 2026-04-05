@@ -1,6 +1,7 @@
 # Distributed_Sistem 
 
-Implementação de um Middleware baseado no modelo de comunicação Publish/Subscribe (Pub/Sub). O projeto foi desenvolvido em Java, utilizando Sockets TCP para garantir a entrega confiável de mensagens e JSON para a serialização dos dados. A arquitetura permite que múltiplos sensores (Publicadores) enviem dados para tópicos específicos, enquanto atuadores (Assinantes) recebem essas informações de forma assíncrona através de um Broker central, o que permite substituir a comunicação ponto-a-ponto, anteriormente utilizada, por uma comunicação cntralizadora e mais robusta que diminui o acoplamento entre os nós do sistema.
+Implementação de um Middleware baseado no modelo de comunicação Publish/Subscribe (Pub/Sub). O projeto foi desenvolvido em Java, utilizando Sockets TCP para garantir a entrega confiável de mensagens e JSON para a serialização dos dados. 
+A arquitetura permite que múltiplos sensores (Publicadores) enviem dados para tópicos específicos, enquanto atuadores (Assinantes) recebem essas informações de forma assíncrona através de um Broker central, o que permite substituir a comunicação ponto-a-ponto, anteriormente utilizada, por uma comunicação cntralizadora e mais robusta que diminui o acoplamento entre os nós do sistema.
 
 ## 🏗 Arquitetura e Estrutura do Projeto
 
