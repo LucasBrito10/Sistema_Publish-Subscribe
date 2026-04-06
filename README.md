@@ -1,6 +1,6 @@
 # Sistema — Publish/Subscribe
 
-Sistema de middleware baseado no padrão arquitetural **Publish/Subscribe**, implementado em Java com comunicação via **Sockets TCP** e serialização de dados em **JSON**. O sistema é projetado para execução distribuída, com cada módulo rodando em uma máquina diferente na rede. O endereço IP do Broker deve ser informado explicitamente em cada nó na inicialização.
+Sistema Distribuído com servidor baseado no padrão arquitetural **Publish/Subscribe** e middleware, implementado em Java com comunicação via **Sockets TCP** e serialização de dados em **JSON**. O sistema é projetado para execução distribuída, com cada módulo rodando em uma máquina diferente na rede. O endereço IP do Broker deve ser informado explicitamente em cada nó na inicialização.
 
 > O valor `localhost` presente no código-fonte serve exclusivamente para testes locais. Em ambiente de rede real, substitua pelo IP da máquina onde o Broker estiver em execução.
 
@@ -372,7 +372,7 @@ docker run -d --name sensor-hum  meu-sensor java implementation.SensorHumidity
 **Execução — Máquina do Cliente:**
 
 ```bash
-docker run -it --name cliente meu-cliente java implementation.ClientTerminalUI
+docker run -it --name cliente meu-cliente 
 # Informe o IP do Broker quando solicitado
 ```
 
