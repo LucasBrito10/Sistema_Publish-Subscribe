@@ -1,0 +1,6 @@
+/home/lucas/SistemaFinal/broker/src/main/java/data_type/Message.java
+/home/lucas/SistemaFinal/broker/src/main/java/enums/CommandType.java
+/home/lucas/SistemaFinal/broker/src/main/java/enums/TopicType.java
+/home/lucas/SistemaFinal/broker/src/main/java/implementation/Broker.java
+/home/lucas/SistemaFinal/broker/src/main/java/implementation/MiddlewareHandlerServer.java
+/home/lucas/SistemaFinal/broker/src/main/java/implementation/ServerMain.java
