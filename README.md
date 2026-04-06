@@ -333,50 +333,50 @@ cd cliente && java -cp out implementation.ClientTerminalUI
 
 Cada módulo possui seu próprio `Dockerfile`. Em ambiente de rede real, os contêineres rodam em hosts diferentes. Neste caso, não é necessária a rede virtual do Docker — a comunicação ocorre pela rede física entre as máquinas.
 
-**Construção das imagens (em cada máquina):**
+**Construção das imagens (em cada máquina e no diretório do nó a ser iniciado):**
 
 ```bash
 # Na máquina do Broker
-docker build -t iot-broker ./broker
+docker build -t meu-broker .
 
 # Na máquina do Sensor
-docker build -t iot-sensor ./sensor
+docker build -t meu-sensor .
 
 # Na máquina do Atuador
-docker build -t iot-atuador ./atuador
+docker build -t meu-atuador .
 
 # Na máquina do Cliente
-docker build -t iot-cliente ./cliente
+docker build -t meu-cliente .
 ```
 
 **Execução — Máquina do Broker:**
 
 ```bash
-docker run -d --name broker -p 8080:8080 iot-broker
+docker run -d --name broker -p 8080:8080 meu-broker
 ```
 
 **Execução — Máquina do Atuador:**
 
 ```bash
-docker run -d --name cooler  iot-atuador java implementation.ActuatorCooler
-docker run -d --name exhaust iot-atuador java implementation.ActuatorExhaust
+docker run -d --name cooler  meu-atuador java implementation.ActuatorCooler
+docker run -d --name exhaust meu-atuador java implementation.ActuatorExhaust
 ```
 
 **Execução — Máquina do Sensor:**
 
 ```bash
-docker run -d --name sensor-temp iot-sensor java implementation.SensorTemperature
-docker run -d --name sensor-hum  iot-sensor java implementation.SensorHumidity
+docker run -d --name sensor-temp meu-sensor java implementation.SensorTemperature
+docker run -d --name sensor-hum  meu-sensor java implementation.SensorHumidity
 ```
 
 **Execução — Máquina do Cliente:**
 
 ```bash
-docker run -it --name cliente iot-cliente java implementation.ClientTerminalUI
+docker run -it --name cliente meu-cliente java implementation.ClientTerminalUI
 # Informe o IP do Broker quando solicitado
 ```
 
-> Para testes em ambiente local com múltiplos contêineres em uma única máquina, crie uma rede virtual e use o nome do contêiner como host: `docker network create rede-iot` e adicione `--network rede-iot` em todos os `docker run`, informando `broker` como host no cliente.
+> Para testes em ambiente local com múltiplos contêineres em uma única máquina, crie uma rede virtual e use o nome do contêiner como host: `docker network create minha-rede` e adicione `--network minha-rede` em todos os `docker run`, informando `broker` como host no cliente.
 
 ---
 
