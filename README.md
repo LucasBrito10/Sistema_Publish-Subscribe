@@ -1,6 +1,6 @@
-# Middleware IoT — Publish/Subscribe
+# Sistema — Publish/Subscribe
 
-Sistema de middleware para Internet das Coisas (IoT) baseado no padrão arquitetural **Publish/Subscribe**, implementado em Java com comunicação via **Sockets TCP** e serialização de dados em **JSON**. O sistema é projetado para execução distribuída, com cada módulo rodando em uma máquina diferente na rede. O endereço IP do Broker deve ser informado explicitamente em cada nó na inicialização.
+Sistema de middleware baseado no padrão arquitetural **Publish/Subscribe**, implementado em Java com comunicação via **Sockets TCP** e serialização de dados em **JSON**. O sistema é projetado para execução distribuída, com cada módulo rodando em uma máquina diferente na rede. O endereço IP do Broker deve ser informado explicitamente em cada nó na inicialização.
 
 > O endereço IP do Broker é configurado via variável de ambiente `BROKER_HOST` nos sensores e atuadores. O `ClientTerminalUI` solicita o IP interativamente no terminal. O valor padrão `localhost` é utilizado automaticamente quando a variável não está definida, servindo apenas para testes locais.
 
@@ -48,7 +48,7 @@ O `Broker` suporta dois modos de roteamento:
 
 **Pub/Sub (Telemetria):** A mensagem é difundida para todos os Subscribers inscritos no tópico de destino. Utilizado por sensores para envio contínuo de dados.
 
-**Ponto a Ponto (Comandos e Respostas):** Se a mensagem contém um `targetNodeId`, o Broker localiza o nó de destino — primeiro entre os Subscribers do tópico, depois pelo índice global de IDs — e entrega a mensagem diretamente, sem difusão.
+**Ponto a Ponto (Comandos e Respostas):** Se a mensagem contém um `targetNodeId`, o Broker localiza o nó de destino — primeiro entre os Subscribers do tópico, depois pelo índice de IDs — e entrega a mensagem diretamente.
 
 ### Mecanismo de Confirmação (ACK)
 
@@ -330,14 +330,14 @@ docker build -t iot-cliente ./cliente
 **Execução — Máquina do Broker:**
 
 ```bash
-docker run -d --name broker -p 8080:8080 iot-broker
+docker run -it --name broker -p 8080:8080 iot-broker
 ```
 
 **Execução — Máquina do Atuador:**
 
 ```bash
-docker run -d --name cooler  -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-atuador java -cp app.jar implementation.ActuatorCooler
-docker run -d --name exhaust -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-atuador java -cp app.jar implementation.ActuatorExhaust
+docker run -it --name cooler  -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-atuador java -cp app.jar implementation.ActuatorCooler
+docker run -it --name exhaust -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-atuador java -cp app.jar implementation.ActuatorExhaust
 ```
 
 **Execução — Máquina do Sensor:**
