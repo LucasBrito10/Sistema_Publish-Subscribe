@@ -1,8 +1,8 @@
-# Sistema — Publish/Subscribe
+# Middleware IoT — Publish/Subscribe
 
-Sistema Distribuído com servidor baseado no padrão arquitetural **Publish/Subscribe** e middleware, implementado em Java com comunicação via **Sockets TCP** e serialização de dados em **JSON**. O sistema é projetado para execução distribuída, com cada módulo rodando em uma máquina diferente na rede. O endereço IP do Broker deve ser informado explicitamente em cada nó na inicialização.
+Sistema de middleware para Internet das Coisas (IoT) baseado no padrão arquitetural **Publish/Subscribe**, implementado em Java com comunicação via **Sockets TCP** e serialização de dados em **JSON**. O sistema é projetado para execução distribuída, com cada módulo rodando em uma máquina diferente na rede. O endereço IP do Broker deve ser informado explicitamente em cada nó na inicialização.
 
-> O valor `localhost` presente no código-fonte serve exclusivamente para testes locais. Em ambiente de rede real, substitua pelo IP da máquina onde o Broker estiver em execução.
+> O endereço IP do Broker é configurado via variável de ambiente `BROKER_HOST` nos sensores e atuadores. O `ClientTerminalUI` solicita o IP interativamente no terminal. O valor padrão `localhost` é utilizado automaticamente quando a variável não está definida, servindo apenas para testes locais.
 
 ---
 
@@ -64,12 +64,12 @@ O cliente pode aguardar essa resposta com o método `waitForResponse(expectedNod
 
 ### Sensores e Atuadores Pré-configurados
 
-Os valores de host no código-fonte estão definidos como `localhost` para fins de teste. Antes de executar em rede, edite as classes abaixo substituindo `"localhost"` pelo IP real do Broker.
+O endereço do Broker é lido da variável de ambiente `BROKER_HOST` (padrão: `localhost`) e `BROKER_PORT` (padrão: `8080`). Não é necessário alterar o código-fonte para execução em rede.
 
 | Classe | ID | Tópico | Comportamento |
 |--------|----|--------|---------------|
-| `SensorTemperature` | `sensor-temp-1` | `TEMP` | Publica a cada 2000 ms, simula 25 C a 35 C |
-| `SensorHumidity` | `sensor-humidity-1` | `UMI` | Publica a cada 3000 ms, simula 40% a 60% |
+| `SensorTemperature` | `SENSOR-TEMP` | `TEMP` | Publica a cada 2000 ms, simula 25 C a 35 C |
+| `SensorHumidity` | `SENSOR-HUMIDITY` | `UMI` | Publica a cada 3000 ms, simula 40% a 60% |
 | `ActuatorCooler` | `ACTUATOR-COOLER` | `TEMP` | Assina e publica em `TEMP`; responde a comandos com ACK |
 | `ActuatorExhaust` | `ACTUATOR-EXHAUST` | `UMI` | Assina e publica em `UMI`; responde a comandos com ACK |
 
@@ -80,7 +80,7 @@ Os valores de host no código-fonte estão definidos como `localhost` para fins 
 Cada módulo replica a mesma divisão interna em três pacotes, separando implementação, modelos e enumerações:
 
 ```
-FinalSistem/
+middleware-iot/
 │
 ├── broker/
 │   ├── src/main/java/
@@ -164,7 +164,7 @@ Toda comunicação é serializada em JSON. O campo `topic` utiliza o enum `Topic
 {
   "connectionType": "PUBLISHER",
   "topic": "TEMP",
-  "nodeId": "sensor-temp-1",
+  "nodeId": "SENSOR-TEMP",
   "data": "Temperature: 28C",
   "commandType": "TELEMETRY"
 }
@@ -218,32 +218,6 @@ ipconfig
 
 ---
 
-### Substituindo o IP nos módulos de Sensor e Atuador
-
-Os arquivos `SensorTemperature.java`, `SensorHumidity.java`, `ActuatorCooler.java` e `ActuatorExhaust.java` contêm `"localhost"` como endereço do Broker. Antes de compilar e executar em rede, edite cada arquivo substituindo esse valor pelo IP real:
-
-```java
-// Antes (teste local)
-sensor.initializeSensor("sensor-temp-1", "localhost", 8080, TopicType.TEMP, 2000);
-
-// Depois (rede real)
-sensor.initializeSensor("sensor-temp-1", "192.168.1.10", 8080, TopicType.TEMP, 2000);
-```
-
-O mesmo padrão se aplica às classes de Atuador:
-
-```java
-// Antes
-cooler.initializeActuator("ACTUATOR-COOLER", "localhost", 8080, TopicType.TEMP);
-
-// Depois
-cooler.initializeActuator("ACTUATOR-COOLER", "192.168.1.10", 8080, TopicType.TEMP);
-```
-
-O `ClientTerminalUI` solicita o IP interativamente na inicialização, portanto não requer alteração no código.
-
----
-
 ### Opção 1: Maven
 
 **Compilação (em cada módulo):**
@@ -262,23 +236,25 @@ java -cp target/classes implementation.ServerMain
 **Execução — Máquina do Atuador:**
 
 ```bash
-# Cooler (tópico TEMP)
 cd atuador
-java -cp target/classes implementation.ActuatorCooler
 
-# Exhaust (tópico UMI) — pode ser a mesma máquina ou outra
-java -cp target/classes implementation.ActuatorExhaust
+# Cooler (tópico TEMP)
+BROKER_HOST=<IP_BROKER> java -cp target/classes implementation.ActuatorCooler
+
+# Exhaust (tópico UMI)
+BROKER_HOST=<IP_BROKER> java -cp target/classes implementation.ActuatorExhaust
 ```
 
 **Execução — Máquina do Sensor:**
 
 ```bash
-# Sensor de Temperatura
 cd sensor
-java -cp target/classes implementation.SensorTemperature
+
+# Sensor de Temperatura
+BROKER_HOST=<IP_BROKER> java -cp target/classes implementation.SensorTemperature
 
 # Sensor de Umidade
-java -cp target/classes implementation.SensorHumidity
+BROKER_HOST=<IP_BROKER> java -cp target/classes implementation.SensorHumidity
 ```
 
 **Execução — Máquina do Cliente:**
@@ -309,15 +285,17 @@ cd broker && java -cp out implementation.ServerMain
 **Execução — Máquina do Atuador:**
 
 ```bash
-cd atuador && java -cp out implementation.ActuatorCooler
-cd atuador && java -cp out implementation.ActuatorExhaust
+cd atuador
+BROKER_HOST=<IP_BROKER> java -cp out implementation.ActuatorCooler
+BROKER_HOST=<IP_BROKER> java -cp out implementation.ActuatorExhaust
 ```
 
 **Execução — Máquina do Sensor:**
 
 ```bash
-cd sensor && java -cp out implementation.SensorTemperature
-cd sensor && java -cp out implementation.SensorHumidity
+cd sensor
+BROKER_HOST=<IP_BROKER> java -cp out implementation.SensorTemperature
+BROKER_HOST=<IP_BROKER> java -cp out implementation.SensorHumidity
 ```
 
 **Execução — Máquina do Cliente:**
@@ -333,56 +311,58 @@ cd cliente && java -cp out implementation.ClientTerminalUI
 
 Cada módulo possui seu próprio `Dockerfile`. Em ambiente de rede real, os contêineres rodam em hosts diferentes. Neste caso, não é necessária a rede virtual do Docker — a comunicação ocorre pela rede física entre as máquinas.
 
-**Construção das imagens (em cada máquina e no diretório do nó a ser iniciado):**
+**Construção das imagens (em cada máquina):**
 
 ```bash
 # Na máquina do Broker
-docker build -t meu-broker .
+docker build -t iot-broker ./broker
 
 # Na máquina do Sensor
-docker build -t meu-sensor .
+docker build -t iot-sensor ./sensor
 
 # Na máquina do Atuador
-docker build -t meu-atuador .
+docker build -t iot-atuador ./atuador
 
 # Na máquina do Cliente
-docker build -t meu-cliente .
+docker build -t iot-cliente ./cliente
 ```
 
 **Execução — Máquina do Broker:**
 
 ```bash
-docker run -d --name broker -p 8080:8080 meu-broker
+docker run -d --name broker -p 8080:8080 iot-broker
 ```
 
 **Execução — Máquina do Atuador:**
 
 ```bash
-docker run -d --name cooler  meu-atuador java implementation.ActuatorCooler
-docker run -d --name exhaust meu-atuador java implementation.ActuatorExhaust
+docker run -d --name cooler  -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-atuador java -cp app.jar implementation.ActuatorCooler
+docker run -d --name exhaust -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-atuador java -cp app.jar implementation.ActuatorExhaust
 ```
 
 **Execução — Máquina do Sensor:**
 
 ```bash
-docker run -d --name sensor-temp meu-sensor java implementation.SensorTemperature
-docker run -d --name sensor-hum  meu-sensor java implementation.SensorHumidity
+docker run -it --name sensor-temp -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-sensor java -cp app.jar implementation.SensorTemperature
+docker run -it --name sensor-hum  -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-sensor java -cp app.jar implementation.SensorHumidity
 ```
+
+> `-it` é necessário nos sensores para permitir alternar entre Modo Normal e Modo Crítico pelo terminal durante a execução.
 
 **Execução — Máquina do Cliente:**
 
 ```bash
-docker run -it --name cliente meu-cliente 
+docker run -it --name cliente iot-cliente java -cp app.jar implementation.ClientTerminalUI
 # Informe o IP do Broker quando solicitado
 ```
 
-> Para testes em ambiente local com múltiplos contêineres em uma única máquina, crie uma rede virtual e use o nome do contêiner como host: `docker network create minha-rede` e adicione `--network minha-rede` em todos os `docker run`, informando `broker` como host no cliente.
+> Para testes em ambiente local com múltiplos contêineres em uma única máquina, crie uma rede virtual e use o nome do contêiner como host: `docker network create rede-iot` e adicione `--network rede-iot` em todos os `docker run`, informando `broker` como host no cliente.
 
 ---
 
 ## Manual do Cliente Terminal
 
-O `ClientTerminalUI` é a única interface que solicita o IP do Broker interativamente, sem necessidade de alterar o código-fonte. Ao iniciar, são solicitadas três informações:
+O `ClientTerminalUI` é a única interface que solicita o IP do Broker interativamente, sem necessidade de variável de ambiente ou alteração no código-fonte. Ao iniciar, são solicitadas três informações:
 
 ```
 === Gateway IoT ===
