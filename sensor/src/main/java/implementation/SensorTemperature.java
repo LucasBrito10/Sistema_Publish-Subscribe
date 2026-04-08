@@ -5,8 +5,11 @@ public class SensorTemperature extends Sensor {
     private int temp = 25;
 
     public static void main(String[] args) {
+        String host = System.getenv().getOrDefault("BROKER_HOST", "localhost");
+        int port    = Integer.parseInt(System.getenv().getOrDefault("BROKER_PORT", "8080"));
+
         SensorTemperature sensor = new SensorTemperature();
-        sensor.initializeSensor("SENSOR-TEMP", "localhost", 8080, TopicType.TEMP, 2000);
+        sensor.initializeSensor("SENSOR-TEMP", host, port, TopicType.TEMP, 2000);
         System.out.println("Sensor Temperature initialized and listening.");
         sensor.runSensor();
     }

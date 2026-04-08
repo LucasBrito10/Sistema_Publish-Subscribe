@@ -1,13 +1,15 @@
 package implementation;
 import enums.*;
 
-
 public class SensorHumidity extends Sensor {
     private int humidity = 40;
 
     public static void main(String[] args) {
+        String host = System.getenv().getOrDefault("BROKER_HOST", "localhost");
+        int port    = Integer.parseInt(System.getenv().getOrDefault("BROKER_PORT", "8080"));
+
         SensorHumidity sensor = new SensorHumidity();
-        sensor.initializeSensor("SENSOR-HUMIDITY", "localhost", 8080, TopicType.UMI, 3000);
+        sensor.initializeSensor("SENSOR-HUMIDITY", host, port, TopicType.UMI, 3000);
         System.out.println("Sensor Humidity initialized and listening.");
         sensor.runSensor();
     }
