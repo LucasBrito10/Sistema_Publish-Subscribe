@@ -1,6 +1,6 @@
 package enums;
 
 public enum TopicType {
-    TEMP,
-    UMI
+    TEMP, //TÓPICO DE TEMPERATURA
+    UMI    //TÓPICO DE UMIDADE
 }
