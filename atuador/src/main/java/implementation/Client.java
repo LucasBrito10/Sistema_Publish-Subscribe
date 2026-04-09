@@ -1,8 +1,8 @@
 package implementation;
+import data_type.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import data_type.Message;
 import enums.CommandType;
 import enums.TopicType;
 import java.util.LinkedList;
@@ -24,6 +24,7 @@ public class Client {
         return this.id;
     }
 
+    //INICIA UMA CONEXÃO DO TIPO PUBLISHER
     public boolean startPublisher(String host, int port, TopicType topic) {
         if (this.publishers.containsKey(topic)) return true;
         try {
@@ -32,6 +33,7 @@ public class Client {
             pub.setTopic(topic);
             pub.publish(false); 
             this.publishers.put(topic, pub);
+            //INICIA THREAD DE CONSUMO 
             this.startListening(pub);
             return true;
         } catch (Exception e) {
@@ -39,6 +41,8 @@ public class Client {
         }
     }
 
+    
+    //INICIA CONEXÃO DO TIPO SUBSCRIBER
     public boolean startSubscribe(String host, int port, TopicType topic) {
         if (this.subscribers.containsKey(topic)) return true;
         try {
@@ -54,12 +58,12 @@ public class Client {
             return false;
         }
     }
-
+    //THREAD PARA CONSUMIR A FILA E  FAZER O MANEJO INICIAL DA RESPOSTA
     private void startListening(Middleware middleware) {
         new Thread(() -> {
             try {
                 while (true) {
-                    Message msg = ((MiddlewareClient) middleware).receiveMessageFromQueue();
+                    Message msg = ((MiddlewareClient)middleware).receiveMessageFromQueue();
                     if (msg != null) {
                         if (msg.getCommandType() == CommandType.RESPONSE) {
                             synchronized (syncLock) {
@@ -69,6 +73,7 @@ public class Client {
                         } else if (msg.getData() != null && msg.getCommandType() == CommandType.TELEMETRY) {
                             storeMessageData(msg.getTopic(), msg.getData());
                         }
+                        //MANEJO ESPECÍFICO DA RESPOSTA DEVE SER IMPLEMENTADO PELA CLASSE QUE EXTENDE ESTA
                         handleIncomingMessage(msg);
                     }
                 }
@@ -79,6 +84,7 @@ public class Client {
 
     protected void handleIncomingMessage(Message msg) {}
 
+    //GUARDAR AS ÚLTIMAS 10 MENSAGENS DE CADA TÓPICO
     private synchronized void storeMessageData(TopicType topic, String data) {
         LinkedList<String> history = this.topicHistory.get(topic);
         if (history != null) {
@@ -116,6 +122,7 @@ public class Client {
         pub.sendMessage(msg);
     }
 
+    //MANDA COMANDO DE ACORDO COM O TIPO DE MENSAGEM DEFINIDO
     public void sendCommand(String data, TopicType topic, String targetNodeId, CommandType type) {
         Middleware pub = this.publishers.get(topic);
         if (pub == null) return;
@@ -129,6 +136,7 @@ public class Client {
         pub.sendMessage(msg);
     }
 
+    //MANDA RESPOSTA DE ACORDO COM TIPO DEFINIDO
     public void sendResponse(String data, TopicType topic, String targetNodeId) {
         Middleware mid = this.publishers.get(topic);
         if (mid == null) mid = this.subscribers.get(topic);
@@ -143,6 +151,7 @@ public class Client {
         mid.sendMessage(msg);
     }
 
+    //PARAR THREAD PRINCIPAL PARA ESPERAR RESPOSTA 
     public Message waitForResponse(String expectedNodeId, long timeoutMillis) {
         long startTime = System.currentTimeMillis();
         synchronized (syncLock) {
