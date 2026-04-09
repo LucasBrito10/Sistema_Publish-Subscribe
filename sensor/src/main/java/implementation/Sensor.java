@@ -19,6 +19,7 @@ public abstract class Sensor extends Client {
     }
 
     public void runSensor() {
+        //THREAD REPONSÁVEL PELA ESCOLHA DO TIPO DE DADOS
         Thread inputThread = new Thread(() -> {
             try (Scanner scanner = new Scanner(System.in)) {
                 System.out.println("=== SENSOR " + this.sensorId + " ===");
@@ -43,7 +44,7 @@ public abstract class Sensor extends Client {
             }
         });
         inputThread.start();
-        
+        //THREAD PARA GERAR DADOS DE TELEMETRIA
         try {
             while (true) {
                 this.sendMessage(generateData(this.isCritical), this.topic);
