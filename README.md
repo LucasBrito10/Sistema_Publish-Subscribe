@@ -336,15 +336,15 @@ docker run -it --name broker -p 8080:8080 iot-broker
 **Execução — Máquina do Atuador:**
 
 ```bash
-docker run -it --name cooler  -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-atuador java -cp app.jar implementation.ActuatorCooler
-docker run -it --name exhaust -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-atuador java -cp app.jar implementation.ActuatorExhaust
+docker run -it --name cooler  -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-atuador implementation.ActuatorCooler
+docker run -it --name exhaust -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-atuador implementation.ActuatorExhaust
 ```
 
 **Execução — Máquina do Sensor:**
 
 ```bash
-docker run -it --name sensor-temp -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-sensor java -cp app.jar implementation.SensorTemperature
-docker run -it --name sensor-hum  -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-sensor java -cp app.jar implementation.SensorHumidity
+docker run -it --name sensor-temp -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-sensor implementation.SensorTemperature
+docker run -it --name sensor-hum  -e BROKER_HOST=<IP_BROKER> -e BROKER_PORT=8080 iot-sensor implementation.SensorHumidity
 ```
 
 > `-it` é necessário nos sensores para permitir alternar entre Modo Normal e Modo Crítico pelo terminal durante a execução.
