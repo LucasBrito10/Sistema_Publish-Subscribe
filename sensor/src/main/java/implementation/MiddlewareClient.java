@@ -7,11 +7,10 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import enums.*;
-import data_type.Message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import enums.TopicType;
+import data_type.Message;
 
 public class MiddlewareClient implements Middleware, Runnable {
     private Socket socket;
@@ -35,6 +34,7 @@ public class MiddlewareClient implements Middleware, Runnable {
         this.receiveQueue = new LinkedBlockingQueue<>();
     }
 
+    //MÉTODO RUN PARA ESTABELECER O QUE A THREAD VAI FAZER, NO CASO DESTE PROJETO, SOMENTE A THREAD DE RECEBIMENTO DE MENSAGEM UTILIZA ESTE MÉTODO RUN
     @Override
     public void run() {
         try {
@@ -46,17 +46,20 @@ public class MiddlewareClient implements Middleware, Runnable {
         } catch (Exception e) {}
     }
 
+    //INICIAR CONEXÃO PUB
     @Override
     public void publish(boolean restriction) {
         if (restriction) return;
         this.connectionType = "PUBLISHER";
         try {
+            //HANDSHAKE -> QUANDO A CONEXÃO É ABERTA, MANDA MENSAGEM PARA O SERVIDOR COM OS DADOS DO   
             Message reg = new Message();
             reg.setNodeId(this.idClient);
             reg.setConnectionType(this.connectionType);
             reg.setTopic(this.topic);
             this.out.println(this.mapper.writeValueAsString(reg));
 
+            //THREAD PARA ENVIO DE MENSAGENS
             new Thread(() -> {
                 try {
                     while (true) {
@@ -66,6 +69,8 @@ public class MiddlewareClient implements Middleware, Runnable {
             }).start();
         } catch (Exception e) {}
     }
+
+    //INICIA CONEXÃO DO TIPO SUB
 
     @Override
     public void subscribe(boolean restriction) {
